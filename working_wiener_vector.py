@@ -4,22 +4,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from skimage.measure import structural_similarity as ssim
-
-# def ssim(im1, im2, k=(0.01, 0.03), l=255):
-#     c1 = (k[0]*l)**2
-#     c2 = (k[1]*l)**2
-#     mu_im1 = np.mean(im1)
-#     mu_im2 = np.mean(im2)
-#     var_im1 = np.var(im1)
-#     # var_im1 =(im1-mu_im1)**2/im1.size[0]**2
-#     var_im2 = np.var(im2)
-#     # var_im2 =(im2-mu_im2)**2/im2.size[0]**2
-#     cov_im1_im2 = np.mean((im1-mu_im1)*(im2-mu_im2))
-
-#     SSIM = ((2*mu_im1*mu_im2 + c1)*(2*cov_im1_im2 + c2))/((mu_im1**2 + mu_im2**2 + c1)*(var_im1 + var_im2 +c2))
-
-#     return SSIM
-
+# this function was written by me and it follows basic steps of frequency filtering
 def wiener_filter(blurred_image, kernel, value):
 	global ground_truth
 	rows, cols, channel = blurred_image.shape
@@ -62,11 +47,12 @@ def wiener_filter(blurred_image, kernel, value):
 	SSIM = (SSIM_b+SSIM_g+SSIM_r)/3.0
 
 	# print(SSIM)
+	# the formula for psnr has been applied here and is printed on terminal everytime someone changes the slider position
 	MSE = np.mean((ground_truth - result)**2)
 	PSNR = 20*np.log10(np.max(ground_truth)/np.sqrt(MSE))
 	print(PSNR)
 	return result
-
+# this function was taken from internet and modified
 def interactive_value(blurred_image, kernel):
     D_min = 1000
     D_max = 99859
@@ -100,5 +86,4 @@ if __name__ == '__main__':
 	ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 	
 	kernel = cv2.imread("blur_kern_1.png", 1)
-	kernel = cv2.resize(kernel, (21,21,))
 	interactive_value(blurred_image, kernel)
