@@ -13,6 +13,7 @@ def inverse_filter(blurred_image, kernel, value):
 	print("value of radius",value)
 	value_list = []
 	value_list.append(value)
+	# implementing the mathematical formula for a lowpass butterworth filter given in book digital image processing by gonzalese
 	for u in range(0, 2*rows):
 		for v in range(0, 2*cols):
 			D = np.sqrt((u-rows)**2 + (v-cols)**2)
@@ -27,6 +28,7 @@ def inverse_filter(blurred_image, kernel, value):
 
 	FFT_pad_blurred_image = np.zeros((2*rows, 2*cols, 3), np.complex128)
 	FFT_kernel = np.zeros((2*rows, 2*cols, 3), np.complex128)
+	# taking fft channelwise and shifting the spectrum to center of frequency domain
 	for i in range(3):
 		FFT_pad_blurred_image[:,:,i] = np.fft.fft2(pad_blurred_image[:,:,i])
 		FFT_pad_blurred_image[:,:,i] = np.fft.fftshift(FFT_pad_blurred_image[:,:,i])
@@ -36,6 +38,7 @@ def inverse_filter(blurred_image, kernel, value):
 	
 	FFT_recovered_image = np.zeros((2*rows, 2*cols, 3), np.complex128)
 	recovered_image = np.zeros((2*rows, 2*cols, 3), np.float64)
+	# division then lowpass filtering and then inverse shift and then inverse fft
 	for i in range(3):
 		FFT_recovered_image[:,:,i] = np.divide(FFT_pad_blurred_image[:,:,i], FFT_kernel[:,:,i])
 		FFT_recovered_image[:,:,i] = np.multiply(FFT_recovered_image[:,:,i], H)
@@ -45,20 +48,22 @@ def inverse_filter(blurred_image, kernel, value):
 	result = recovered_image[0:rows, 0:cols, :]
 	print(result.dtype)
 	
+	# since the ssim is calculated over normalized image
 	result = cv2.normalize(result, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 	ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 	
+	#my ssim wasn't working on coloured images so i splitted them and taken average
 	SSIM_R = ssim(result[:,:,0], ground_truth[:,:,0])
 	SSIM_G = ssim(result[:,:,1], ground_truth[:,:,1])
 	SSIM_B = ssim(result[:,:,2], ground_truth[:,:,2])
 
 	SSIM = (SSIM_R + SSIM_G + SSIM_B)/3.0
-	SSIM_list = []
-	SSIM_list.append(SSIM)
+	# i printed values of ssim and values of parameters to compare when does it gives best ssim
 	print(SSIM)
 	
 	return result
 
+# I took this function from internet and modified it
 def interactive_value(blurred_image, kernel):
     D_min = 5
     D_max = 1600
@@ -81,8 +86,9 @@ def interactive_value(blurred_image, kernel):
     value_slider.on_changed(update)
     plt.show()
 
-
+# this function was written by me
 if __name__ == '__main__':
+	# global because i am accessing it in another function
 	global ground_truth
 	blurred_image = cv2.imread("Blurry1_1.jpg", 1)
 	blurred_image = cv2.normalize(blurred_image, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
@@ -92,32 +98,3 @@ if __name__ == '__main__':
 
 	kernel = cv2.imread("blur_kern_1.png", 1)
 	interactive_value(blurred_image, kernel)
-	
-	# H = butterworth_filter(blurred_image)
-	# R_ch, G_ch, B_ch = cv2.split(blurred_image)
-
-	# kernel = cv2.imread("cho.jpg", 1)
-	# # kernel = cv2.resize(kernel, (21,21, ))
-	# print("shape of kernel", kernel.shape)
-
-	# kernel_R, kernel_G, kernel_B = cv2.split(kernel)
-
-	# rec_R_ch = inverse_filter(R_ch, kernel_R, H)
-	# rec_R_ch = rec_R_ch/np.max(rec_R_ch)
-
-	# rec_G_ch = inverse_filter(G_ch, kernel_G, H)
-	# rec_G_ch = rec_G_ch/np.max(rec_G_ch)
-	
-	# rec_B_ch = inverse_filter(B_ch, kernel_B, H)
-	# rec_B_ch = rec_B_ch/np.max(rec_B_ch)
-
-	# recovered_image = cv2.merge([rec_R_ch, rec_G_ch, rec_B_ch])
-	# print("minimum value of recovered_image", np.min(recovered_image))
-	# print("maximum value of recovered_image", np.max(recovered_image))
-
-	# MSE = np.mean((GroundTruth - recovered_image)**2)
-	# PSNR = 20*np.log10(np.max(GroundTruth)/np.sqrt(MSE))
-	# print("the final PSNR value", PSNR)
-	
-	# cv2.imshow("recovered_image", recovered_image)
-	# cv2.waitKey(0)
