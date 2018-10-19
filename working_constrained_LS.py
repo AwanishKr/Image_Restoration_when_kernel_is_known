@@ -2,7 +2,8 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-
+# i wrote this function myself, basic steps of frequency domain fltering is done, namely padding then shifting to the center 
+# then filtering and inverse shift and then inverse fft and finally taking real or absolute part of result. and taking cropped image
 def constrained_LeastSquare(blurred_channel, kernel, value):
 	rows, cols, channel = blurred_channel.shape
 	pad_blurred_channel = np.zeros((2*rows, 2*cols, 3), np.float64)
@@ -19,7 +20,7 @@ def constrained_LeastSquare(blurred_channel, kernel, value):
 	FFT_kernel = np.zeros((2*rows, 2*cols, 3), np.complex64)
 	for i in range(3):
 		FFT_kernel[:,:,i] = np.fft.fftshift(np.fft.fft2(pad_kernel[:,:,i]))
-
+	# this matrix is laplacian and is given in book to use for constrained least squares. 
 	P_xy = np.array([[0,-1, 0],
 					 [-1,4,-1],
 					 [0,-1, 0]], np.float64)
@@ -43,16 +44,17 @@ def constrained_LeastSquare(blurred_channel, kernel, value):
 	
 	result = recovered_channel[0:rows, 0:cols, :]
 	
-	# result = cv2.normalize(result, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
-	# ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
+	# ssim is calculated on normalized image, the ssim i wrote wasn't giving correct result being short on time i had to use in built function for same
+	result = cv2.normalize(result, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
+	ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 	
-	# result_gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-	# ground_truth_gray = cv2.cvtColor(ground_truth, cv2.COLOR_BGR2GRAY)
-	# SSIM = ssim(result_gray, ground_truth_gray)
-	# print(SSIM)
+	result_gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+	ground_truth_gray = cv2.cvtColor(ground_truth, cv2.COLOR_BGR2GRAY)
+	SSIM = ssim(result_gray, ground_truth_gray)
+	print(SSIM)
 
 	return result
-
+# i took this function from internet and modified it. although it understand it completely now
 def interactive_value(blurred_image, kernel):
     D_min = 10000
     D_max = 758508
@@ -77,22 +79,14 @@ def interactive_value(blurred_image, kernel):
 
 
 if __name__ == '__main__':
+	global ground_truth
 	blurred_image = cv2.imread("blurred_image.jpg", 1)
 	blurred_image = cv2.normalize(blurred_image, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 	
-	# ground_truth = cv2.imread("last_blur_1.png", 1)
-	# ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
+	ground_truth = cv2.imread("last_blur_1.png", 1)
+	ground_truth = cv2.normalize(ground_truth, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
 
 	kernel = cv2.imread("my_kernel.jpg", 1)
 	kernel = cv2.resize(kernel, (21,21,))
 	
-	interactive_value(blurred_image, kernel)	
-
-	# recovered_image = constrained_LeastSquare(blurred_image, kernel)
-	# recovered_image = cv2.normalize(recovered_image, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
-	
-	# qrecovered_image = cv2.cvtColor(recovered_image, cv2.COLOR_BGR2RGB)
-	# fig = plt.figure()
-	# plt.axis("off")
-	# plt.imshow(recovered_image)
-	# plt.show()
+	interactive_value(blurred_image, kernel)
